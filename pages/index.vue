@@ -1,14 +1,14 @@
 <template>
   <div>
     <!-- Page Header -->
-    <v-row class="mb-4 pt-10">
+    <v-row class="mt-2">
       <v-col>
         <h1 class="text-h4 font-weight-bold">Employee Attendance Overview</h1>
       </v-col>
     </v-row>
 
     <!-- Action Button -->
-    <v-row class="mb-4">
+    <v-row class="mb-2">
       <v-col>
         <v-btn
           color="primary"
@@ -46,7 +46,7 @@
             </div>
             <div class="d-flex align-center">
               <v-icon size="small" color="today" class="mr-1"
-                >mdi-checkbox-blank-outline</v-icon
+                >mdi-checkbox-blank</v-icon
               >
               <span class="text-body-2">Today</span>
             </div>
@@ -55,95 +55,108 @@
       </v-col>
     </v-row>
 
-    <v-row align="center" class="mb-4">
-      <v-col cols="auto">
-        <v-btn
-          icon="mdi-chevron-left"
-          variant="text"
-          @click="previousMonth"
-        ></v-btn>
-      </v-col>
-      <v-col cols="auto">
-        <h2 class="text-h6">{{ currentMonthYear }}</h2>
-      </v-col>
-      <v-col cols="auto">
-        <v-btn
-          icon="mdi-chevron-right"
-          variant="text"
-          @click="nextMonth"
-        ></v-btn>
-      </v-col>
-      <v-spacer></v-spacer>
-      <v-col cols="auto">
-        <v-btn variant="outlined" @click="goToToday">Today</v-btn>
-      </v-col>
-    </v-row>
-
-    <v-card class="mt-4 mb-8">
-      <v-card-text class="pa-0">
-        <!-- Fixed Header -->
-        <div class="bg-grey-lighten-4 border-b-2" style="position: sticky; top: 0; z-index: 1;">
-          <v-row no-gutters class="align-center" style="min-height: 3rem;">
-            <v-col style="width: 6.25rem; max-width: 6.25rem;" class="px-2 py-3 border-r text-subtitle-2 font-weight-medium">
-              No.
-            </v-col>
-            <v-col style="width: 9.375rem; max-width: 9.375rem;" class="px-2 py-3 border-r text-subtitle-2 font-weight-medium">
-              First Name
-            </v-col>
-            <v-col style="width: 9.375rem; max-width: 9.375rem;" class="px-2 py-3 border-r text-subtitle-2 font-weight-medium">
-              Last Name
-            </v-col>
-            <v-col
-              v-for="day in daysInMonth"
-              :key="`header-${day}`"
-              style="width: 2.1875rem; max-width: 2.1875rem;"
-              class="px-1 py-3 border-r text-center text-subtitle-2 font-weight-medium"
-            >
-              {{ day }}
-            </v-col>
-          </v-row>
-        </div>
-
-        <!-- Virtual Scroll Body -->
-        <div class="border" style="border-top: none; max-height: 31.25rem; overflow-x: auto;">
-          <v-virtual-scroll :items="employees" height="500" :key-field="'id'">
-            <template v-slot:default="{ item: employee }">
-              <v-hover v-slot="{ isHovering, props }">
-                <div v-bind="props" :class="isHovering ? 'bg-grey-lighten-5' : ''" class="border-b">
-                  <v-row no-gutters class="align-center" style="min-height: 2.8125rem;">
-                    <v-col style="width: 6.25rem; max-width: 6.25rem;" class="px-2 py-2 border-r">
-                      {{ employee.id }}
-                    </v-col>
-                    <v-col style="width: 9.375rem; max-width: 9.375rem;" class="px-2 py-2 border-r">
-                      {{ employee.firstName }}
-                    </v-col>
-                    <v-col style="width: 9.375rem; max-width: 9.375rem;" class="px-2 py-2 border-r">
-                      {{ employee.lastName }}
-                    </v-col>
-                    <v-col
-                      v-for="day in daysInMonth"
-                      :key="`${employee.id}-${day}`"
-                      style="width: 2.1875rem; max-width: 2.1875rem;"
-                      class="px-1 py-1 border-r d-flex justify-center"
-                    >
-                      <v-sheet
-                        :color="getCellColor(employee.id, day)"
-                        height="24"
-                        width="24"
-                        class="d-flex align-center justify-center rounded border"
-                      >
-                        <span class="text-caption font-weight-bold text-white" style="font-size: 0.6875rem;">{{ day }}</span>
-                      </v-sheet>
-                    </v-col>
-                  </v-row>
-                </div>
-              </v-hover>
-            </template>
-          </v-virtual-scroll>
-        </div>
+    <!-- Attendance Grid -->
+    <v-card>
+      <v-card-text>
+        <!-- Month Navigation -->
+        <v-row align="center">
+          <v-col cols="auto">
+            <v-btn
+              icon="mdi-chevron-left"
+              variant="text"
+              @click="previousMonth"
+            ></v-btn>
+          </v-col>
+          <v-col cols="auto">
+            <h2 class="text-h6">{{ currentMonthYear }}</h2>
+          </v-col>
+          <v-col cols="auto">
+            <v-btn
+              icon="mdi-chevron-right"
+              variant="text"
+              @click="nextMonth"
+            ></v-btn>
+          </v-col>
+          <v-spacer></v-spacer>
+          <v-col cols="auto">
+            <v-btn variant="outlined" @click="goToToday">Today</v-btn>
+          </v-col>
+        </v-row>
       </v-card-text>
     </v-card>
 
+    <v-card class="attendance-grid-card">
+      <v-card-text class="pa-0">
+        <!-- Scrollable container -->
+        <div class="attendance-scroll-container">
+          <!-- Fixed width wrapper for proper scrolling -->
+          <div
+            class="attendance-table-wrapper"
+            :style="`min-width: ${minTableWidth}rem;`"
+          >
+            <!-- Fixed Header Table -->
+            <div class="attendance-header-container">
+              <table class="attendance-table">
+                <thead>
+                  <tr class="attendance-header">
+                    <th class="col-personnel">No.</th>
+                    <th class="col-name">First Name</th>
+                    <th class="col-name">Last Name</th>
+                    <th
+                      v-for="day in daysInMonth"
+                      :key="`header-${day}`"
+                      class="col-day text-center"
+                    >
+                      {{ day }}
+                    </th>
+                  </tr>
+                </thead>
+              </table>
+            </div>
+
+            <!-- Virtual Scroll Body -->
+            <div class="attendance-body-container">
+              <v-virtual-scroll
+                :items="employees"
+                height="500"
+                item-height="45"
+                :key-field="'id'"
+                class="virtual-scroll-no-overflow"
+              >
+                <template v-slot:default="{ item: employee }">
+                  <div class="attendance-row-wrapper">
+                    <table class="attendance-table">
+                      <tbody>
+                        <tr class="attendance-row">
+                          <td class="col-personnel">{{ employee.id }}</td>
+                          <td class="col-name">{{ employee.firstName }}</td>
+                          <td class="col-name">{{ employee.lastName }}</td>
+                          <td
+                            v-for="day in daysInMonth"
+                            :key="`${employee.id}-${day}`"
+                            class="col-day"
+                          >
+                            <v-sheet
+                              :color="getCellColor(employee.id, day)"
+                              class="attendance-cell"
+                              rounded
+                            >
+                              <span class="text-caption font-weight-bold">{{
+                                day
+                              }}</span>
+                            </v-sheet>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </template>
+              </v-virtual-scroll>
+            </div>
+          </div>
+        </div>
+      </v-card-text>
+    </v-card>
     <!-- Add Absence Dialog (will be implemented as component later) -->
     <v-dialog v-model="showAddAbsenceDialog" max-width="500">
       <v-card>
@@ -172,6 +185,13 @@ const { getAttendanceStatus } = useAttendance();
 const showAddAbsenceDialog = ref(false);
 const currentDate = ref(new Date());
 
+// Column width constants (in rem)
+const COLUMN_WIDTHS = {
+  personnel: 6.25, // 100px
+  name: 9.375, // 150px
+  day: 2.1875, // 35px
+};
+
 // Computed properties
 const currentMonthYear = computed(() => {
   const date = currentDate.value;
@@ -188,6 +208,13 @@ const daysInMonth = computed(() => {
   return Array.from({ length: lastDay }, (_, i) => i + 1);
 });
 
+// Calculate minimum table width
+const minTableWidth = computed(() => {
+  const fixedColumnsWidth = COLUMN_WIDTHS.personnel + COLUMN_WIDTHS.name * 2;
+  const daysWidth = daysInMonth.value.length * COLUMN_WIDTHS.day;
+  return fixedColumnsWidth + daysWidth;
+});
+
 // Methods
 const getCellColor = (employeeId: string, day: number) => {
   const date = new Date(
@@ -197,7 +224,6 @@ const getCellColor = (employeeId: string, day: number) => {
   );
   const status = getAttendanceStatus(employeeId, date);
 
-  // Map status to Vuetify theme colors efficiently
   const colorMap = {
     present: "present",
     absent: "absent",
@@ -235,11 +261,117 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* Using rem units instead of px */
 .gap-3 {
   gap: 0.75rem;
 }
 .gap-4 {
   gap: 1rem;
+}
+
+/* Attendance Grid Styles */
+.attendance-grid-card {
+}
+
+/* Scrollable container */
+.attendance-scroll-container {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* Table wrapper with minimum width */
+.attendance-table-wrapper {
+  position: relative;
+}
+
+.attendance-header-container {
+  background-color: #f5f5f5;
+  border-bottom: 1px solid #ddd;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.attendance-body-container {
+  border: 1px solid #ddd;
+  border-top: none;
+}
+
+.attendance-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.attendance-header th {
+  padding: 0.75rem 0.5rem;
+  text-align: left;
+  font-weight: 600;
+  border-right: 0.0625rem solid #ddd;
+  background-color: #f5f5f5;
+}
+
+.attendance-header th:last-child {
+  border-right: none;
+}
+
+.col-personnel {
+  width: 6.25rem;
+}
+
+.col-name {
+  width: 9.375rem;
+}
+
+.col-day {
+  width: 2.1875rem;
+  text-align: center;
+  padding: 0 !important;
+}
+
+.attendance-row-wrapper {
+  border-bottom: 0.0625rem solid #eee;
+}
+
+.attendance-row-wrapper:hover {
+  background-color: #fafafa;
+}
+
+.attendance-row td {
+  padding: 0.625rem 0.5rem;
+  border-right: 0.0625rem solid #eee;
+  vertical-align: middle;
+  height: 2.8125rem;
+}
+
+.attendance-row td:last-child {
+  border-right: none;
+}
+
+.attendance-row .col-day {
+  padding: 0.3125rem 0;
+}
+
+.attendance-cell {
+  width: 1.5rem;
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+}
+
+.attendance-cell .text-caption {
+  font-size: 0.75rem;
+  color: white;
+}
+
+/* Prevent v-virtual-scroll from creating its own horizontal scrollbar */
+.virtual-scroll-no-overflow {
+  overflow-x: hidden !important;
+}
+
+/* Ensure the virtual scroll wrapper doesn't create horizontal scroll */
+.attendance-body-container :deep(.v-virtual-scroll__container) {
+  overflow-x: hidden !important;
 }
 </style>
