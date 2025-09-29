@@ -58,23 +58,23 @@
     <!-- Attendance Grid -->
     <v-card>
       <v-card-text>
-        <!-- Month Navigation -->
+        <!-- Year Navigation -->
         <v-row align="center">
           <v-col cols="auto">
             <v-btn
               icon="mdi-chevron-left"
               variant="text"
-              @click="previousMonth"
+              @click="previousYear"
             ></v-btn>
           </v-col>
           <v-col cols="auto">
-            <h2 class="text-h6">{{ currentMonthYear }}</h2>
+            <h2 class="text-h6">{{ currentYear }}</h2>
           </v-col>
           <v-col cols="auto">
             <v-btn
               icon="mdi-chevron-right"
               variant="text"
-              @click="nextMonth"
+              @click="nextYear"
             ></v-btn>
           </v-col>
           <v-spacer></v-spacer>
@@ -98,16 +98,32 @@
             <div class="attendance-header-container">
               <table class="attendance-table">
                 <thead>
+                  <!-- Month separator row -->
+                  <tr class="month-separator-header">
+                    <th class="col-personnel"></th>
+                    <th class="col-name"></th>
+                    <th class="col-name"></th>
+                    <template v-for="(dayData, index) in daysInYear" :key="`month-${index}`">
+                      <th
+                        v-if="dayData.isFirstOfMonth"
+                        :colspan="getDaysInMonth(dayData.month, dayData.date.getFullYear())"
+                        class="col-month text-center"
+                      >
+                        {{ dayData.monthName }}
+                      </th>
+                    </template>
+                  </tr>
+                  <!-- Day numbers row -->
                   <tr class="attendance-header">
                     <th class="col-personnel">No.</th>
                     <th class="col-name">First Name</th>
                     <th class="col-name">Last Name</th>
                     <th
-                      v-for="day in daysInMonth"
-                      :key="`header-${day}`"
+                      v-for="dayData in daysInYear"
+                      :key="`header-${dayData.dayOfYear}`"
                       class="col-day text-center"
                     >
-                      {{ day }}
+                      {{ dayData.day }}
                     </th>
                   </tr>
                 </thead>
@@ -132,20 +148,20 @@
                           <td class="col-name">{{ employee.firstName }}</td>
                           <td class="col-name">{{ employee.lastName }}</td>
                           <td
-                            v-for="day in daysInMonth"
-                            :key="`${employee.id}-${day}`"
+                            v-for="dayData in daysInYear"
+                            :key="`${employee.id}-${dayData.dayOfYear}`"
                             class="col-day"
                           >
                             <v-sheet
                               :key="updateKey"
-                              :color="getCellColor(employee.id, day)"
+                              :color="getCellColor(employee.id, dayData)"
                               class="attendance-cell"
                               rounded
-                              :style="isWeekendDay(day) ? 'cursor: not-allowed' : 'cursor: pointer'"
-                              @click="handleCellClick(employee.id, day)"
+                              :style="isWeekendDay(dayData) ? 'cursor: not-allowed' : 'cursor: pointer'"
+                              @click="handleCellClick(employee.id, dayData)"
                             >
                               <span class="text-caption font-weight-bold">{{
-                                day
+                                dayData.day
                               }}</span>
                             </v-sheet>
                           </td>
@@ -204,37 +220,44 @@ const COLUMN_WIDTHS = {
   day: 2.1875, // 35px
 };
 
+
 // Computed properties
-const currentMonthYear = computed(() => {
-  const date = currentDate.value;
-  return date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+const currentYear = computed(() => {
+  return currentDate.value.getFullYear();
 });
 
-const daysInMonth = computed(() => {
-  const date = currentDate.value;
-  const lastDay = new Date(
-    date.getFullYear(),
-    date.getMonth() + 1,
-    0,
-  ).getDate();
-  return Array.from({ length: lastDay }, (_, i) => i + 1);
+const daysInYear = computed(() => {
+  const year = currentDate.value.getFullYear();
+  const isLeapYear = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+  const totalDays = isLeapYear ? 366 : 365;
+
+  return Array.from({ length: totalDays }, (_, i) => {
+    const date = new Date(year, 0, i + 1);
+    return {
+      dayOfYear: i + 1,
+      date: date,
+      day: date.getDate(),
+      month: date.getMonth(),
+      monthName: date.toLocaleDateString("en-US", { month: "short" }),
+      isFirstOfMonth: date.getDate() === 1
+    };
+  });
 });
 
 // Calculate minimum table width
 const minTableWidth = computed(() => {
   const fixedColumnsWidth = COLUMN_WIDTHS.personnel + COLUMN_WIDTHS.name * 2;
-  const daysWidth = daysInMonth.value.length * COLUMN_WIDTHS.day;
+  const daysWidth = daysInYear.value.length * COLUMN_WIDTHS.day;
   return fixedColumnsWidth + daysWidth;
 });
 
 // Methods
-const getCellColor = (employeeId: string, day: number) => {
-  const date = new Date(
-    currentDate.value.getFullYear(),
-    currentDate.value.getMonth(),
-    day,
-  );
-  const status = getAttendanceStatus(employeeId, date);
+const getDaysInMonth = (month: number, year: number) => {
+  return new Date(year, month + 1, 0).getDate();
+};
+
+const getCellColor = (employeeId: string, dayData: any) => {
+  const status = getAttendanceStatus(employeeId, dayData.date);
 
   const colorMap = {
     present: "present",
@@ -247,27 +270,22 @@ const getCellColor = (employeeId: string, day: number) => {
   return colorMap[status] || "transparent";
 };
 
-const isWeekendDay = (day: number) => {
-  const date = new Date(
-    currentDate.value.getFullYear(),
-    currentDate.value.getMonth(),
-    day,
-  );
-  return isWeekend(date);
+const isWeekendDay = (dayData: any) => {
+  return isWeekend(dayData.date);
 };
 
-const previousMonth = () => {
+const previousYear = () => {
   currentDate.value = new Date(
-    currentDate.value.getFullYear(),
-    currentDate.value.getMonth() - 1,
+    currentDate.value.getFullYear() - 1,
+    0,
     1,
   );
 };
 
-const nextMonth = () => {
+const nextYear = () => {
   currentDate.value = new Date(
-    currentDate.value.getFullYear(),
-    currentDate.value.getMonth() + 1,
+    currentDate.value.getFullYear() + 1,
+    0,
     1,
   );
 };
@@ -277,24 +295,18 @@ const goToToday = () => {
   currentDate.value = new Date();
 };
 
-const handleCellClick = (employeeId: string, day: number) => {
+const handleCellClick = (employeeId: string, dayData: any) => {
   // Don't allow clicks on weekend days
-  if (isWeekendDay(day)) {
+  if (isWeekendDay(dayData)) {
     return;
   }
 
   // Set the selected employee and date
   selectedEmployeeId.value = employeeId;
-  const clickedDate = new Date(
-    currentDate.value.getFullYear(),
-    currentDate.value.getMonth(),
-    day,
-  );
-
-  selectedAbsenceDate.value = clickedDate;
+  selectedAbsenceDate.value = dayData.date;
 
   // Check if there's an existing absence for this employee and date
-  const existingAbsence = getAbsenceByEmployeeAndDate(employeeId, clickedDate);
+  const existingAbsence = getAbsenceByEmployeeAndDate(employeeId, dayData.date);
 
   if (existingAbsence) {
     selectedAbsenceId.value = existingAbsence.id;
@@ -405,6 +417,24 @@ onMounted(() => {
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
+}
+
+.month-separator-header th {
+  padding: 0.5rem 0.25rem;
+  text-align: center;
+  font-weight: 700;
+  font-size: 0.875rem;
+  border-right: 0.0625rem solid #bbb;
+  background-color: #e8e8e8;
+  color: #555;
+}
+
+.month-separator-header th:last-child {
+  border-right: none;
+}
+
+.col-month {
+  border-bottom: 0.125rem solid #aaa;
 }
 
 .attendance-header th {
