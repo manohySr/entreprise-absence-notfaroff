@@ -70,8 +70,8 @@ export const useAttendance = () => {
 
     // Format date as YYYY-MM-DD in local timezone
     const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
     const dateStr = `${year}-${month}-${day}`;
 
     const absence = absences.value.find(
@@ -87,6 +87,21 @@ export const useAttendance = () => {
 
   const getEmployeeAbsences = (employeeId: string): Absence[] => {
     return absences.value.filter((a) => a.employeeId === employeeId);
+  };
+
+  const getAbsenceByEmployeeAndDate = (
+    employeeId: string,
+    date: Date,
+  ): Absence | undefined => {
+    // Format date as YYYY-MM-DD in local timezone
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const dateStr = `${year}-${month}-${day}`;
+
+    return absences.value.find(
+      (a) => a.employeeId === employeeId && a.date === dateStr,
+    );
   };
 
   const addAbsence = (absence: Omit<Absence, "id">) => {
@@ -124,9 +139,10 @@ export const useAttendance = () => {
   };
 
   return {
-    absences: readonly(absences),
+    absences,
     getAttendanceStatus,
     getEmployeeAbsences,
+    getAbsenceByEmployeeAndDate,
     addAbsence,
     updateAbsence,
     deleteAbsence,

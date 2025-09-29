@@ -137,9 +137,12 @@
                             class="col-day"
                           >
                             <v-sheet
+                              :key="updateKey"
                               :color="getCellColor(employee.id, day)"
                               class="attendance-cell"
                               rounded
+                              :style="isWeekendDay(day) ? 'cursor: not-allowed' : 'cursor: pointer'"
+                              @click="handleCellClick(employee.id, day)"
                             >
                               <span class="text-caption font-weight-bold">{{
                                 day
@@ -157,33 +160,42 @@
         </div>
       </v-card-text>
     </v-card>
-    <!-- Add Absence Dialog (will be implemented as component later) -->
-    <v-dialog v-model="showAddAbsenceDialog" max-width="500">
-      <v-card>
-        <v-card-title>Add New Absence</v-card-title>
-        <v-card-text>
-          <p>Add absence form will be implemented here</p>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn @click="showAddAbsenceDialog = false">Cancel</v-btn>
-          <v-btn color="primary" @click="showAddAbsenceDialog = false"
-            >Save</v-btn
-          >
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <!-- Add Absence Dialog -->
+    <AbsenceDialog
+      v-model="showAddAbsenceDialog"
+      :absence-id="selectedAbsenceId"
+      :employee-id="selectedEmployeeId"
+      :selected-date="selectedAbsenceDate"
+      @save="handleSaveAbsence"
+      @cancel="handleCancelAbsence"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
+import AbsenceDialog from "~/components/absence/AbsenceDialog.vue";
+
 // Get data from our composables
 const { employees } = useEmployees();
-const { getAttendanceStatus } = useAttendance();
+const {
+  absences,
+  getAttendanceStatus,
+  getAbsenceByEmployeeAndDate,
+  addAbsence,
+  updateAbsence,
+  deleteAbsence,
+  isWeekend,
+} = useAttendance();
 
 // Component state
 const showAddAbsenceDialog = ref(false);
 const currentDate = ref(new Date());
+const selectedEmployeeId = ref<string>();
+const selectedAbsenceDate = ref<Date>();
+const selectedAbsenceId = ref<string>();
+
+// Force update key for virtual scroll when absences change
+const updateKey = ref(0);
 
 // Column width constants (in rem)
 const COLUMN_WIDTHS = {
@@ -235,6 +247,15 @@ const getCellColor = (employeeId: string, day: number) => {
   return colorMap[status] || "transparent";
 };
 
+const isWeekendDay = (day: number) => {
+  const date = new Date(
+    currentDate.value.getFullYear(),
+    currentDate.value.getMonth(),
+    day,
+  );
+  return isWeekend(date);
+};
+
 const previousMonth = () => {
   currentDate.value = new Date(
     currentDate.value.getFullYear(),
@@ -252,8 +273,92 @@ const nextMonth = () => {
 };
 
 const goToToday = () => {
+  //TODO: Scroll to today
   currentDate.value = new Date();
 };
+
+const handleCellClick = (employeeId: string, day: number) => {
+  // Don't allow clicks on weekend days
+  if (isWeekendDay(day)) {
+    return;
+  }
+
+  // Set the selected employee and date
+  selectedEmployeeId.value = employeeId;
+  const clickedDate = new Date(
+    currentDate.value.getFullYear(),
+    currentDate.value.getMonth(),
+    day,
+  );
+
+  selectedAbsenceDate.value = clickedDate;
+
+  // Check if there's an existing absence for this employee and date
+  const existingAbsence = getAbsenceByEmployeeAndDate(employeeId, clickedDate);
+
+  if (existingAbsence) {
+    selectedAbsenceId.value = existingAbsence.id;
+  } else {
+    selectedAbsenceId.value = undefined;
+  }
+
+  // Open the dialog
+  showAddAbsenceDialog.value = true;
+};
+
+const handleSaveAbsence = (absenceData: any) => {
+  // Check if user selected "Present" - this means delete the absence record
+  if (absenceData.type === "present") {
+    if (selectedAbsenceId.value) {
+      // Delete existing absence to mark as present
+      deleteAbsence(selectedAbsenceId.value);
+      console.log(
+        "Deleted absence (marked as present):",
+        selectedAbsenceId.value,
+      );
+    }
+    // If no existing absence and type is "present", do nothing (already present)
+  } else {
+    // Handle regular absence types
+    if (selectedAbsenceId.value) {
+      // Update existing absence
+      updateAbsence(selectedAbsenceId.value, absenceData);
+      console.log("Updated absence:", selectedAbsenceId.value, absenceData);
+    } else {
+      // Create new absence
+      addAbsence(absenceData);
+      console.log("Created new absence:", absenceData);
+    }
+  }
+
+  // Reset selected values
+  selectedAbsenceId.value = undefined;
+  selectedEmployeeId.value = undefined;
+  selectedAbsenceDate.value = undefined;
+
+  // Force update the grid to reflect changes immediately
+  updateKey.value++;
+
+  // TODO: Success notification
+};
+
+const handleCancelAbsence = () => {
+  console.log("Absence dialog cancelled");
+  // Reset selected data
+  selectedAbsenceId.value = undefined;
+  selectedEmployeeId.value = undefined;
+  selectedAbsenceDate.value = undefined;
+};
+
+// Watch for changes in absences to ensure live updates
+watch(
+  absences,
+  () => {
+    // This will trigger whenever absences array changes
+    console.log("Absences updated, total:", absences.value.length);
+  },
+  { deep: true },
+);
 
 onMounted(() => {
   console.log("Dashboard mounted with", employees.value.length, "employees");
