@@ -98,11 +98,10 @@
             <div class="attendance-header-container">
               <table class="attendance-table">
                 <thead>
-                  <!-- Month separator row -->
-                  <tr class="month-separator-header">
-                    <th class="col-personnel"></th>
-                    <th class="col-name"></th>
-                    <th class="col-name"></th>
+                  <tr class="separator-header">
+                    <th class="col-personnel text-left">No.</th>
+                    <th class="col-name text-left">First Name</th>
+                    <th class="col-name text-left">Last Name</th>
                     <template
                       v-for="(dayData, index) in daysInYear"
                       :key="`month-${index}`"
@@ -120,27 +119,6 @@
                         {{ dayData.monthName }}
                       </th>
                     </template>
-                  </tr>
-                  <!-- Day numbers row -->
-                  <tr class="attendance-header">
-                    <th class="col-personnel">No.</th>
-                    <th class="col-name">First Name</th>
-                    <th class="col-name">Last Name</th>
-                    <th class="days-header-container">
-                      <RecycleScroller
-                        class="days-header-scroller"
-                        :items="daysInYear"
-                        :item-size="35"
-                        direction="horizontal"
-                        key-field="dayOfYear"
-                      >
-                        <template #default="{ item }">
-                          <div class="col-day text-center">
-                            {{ item.day }}
-                          </div>
-                        </template>
-                      </RecycleScroller>
-                    </th>
                   </tr>
                 </thead>
               </table>
@@ -422,7 +400,7 @@ onMounted(() => {
 
 .attendance-header-container {
   background-color: #f5f5f5;
-  border-bottom: 1px solid #ddd;
+  border: 1px solid #ddd;
   position: sticky;
   top: 0;
   z-index: 1;
@@ -439,22 +417,21 @@ onMounted(() => {
   table-layout: fixed;
 }
 
-.month-separator-header th {
-  padding: 0.5rem 0.25rem;
+.separator-header th {
   text-align: center;
   font-weight: 700;
   font-size: 0.875rem;
-  border-right: 0.0625rem solid #bbb;
+  border-right: 1px solid #bbb;
   background-color: #e8e8e8;
   color: #555;
+  padding: 0.8rem;
 }
 
-.month-separator-header th:last-child {
+.separator-header th:last-child {
   border-right: none;
 }
 
 .col-month {
-  border-bottom: 0.125rem solid #aaa;
 }
 
 .attendance-header th {
@@ -478,9 +455,11 @@ onMounted(() => {
 }
 
 .col-day {
-  width: 2.1875rem;
-  text-align: center;
   padding: 0 !important;
+  display: flex;
+  height: 100%;
+  width: 100%;
+  align-items: center;
 }
 
 .attendance-row-wrapper {
@@ -492,10 +471,13 @@ onMounted(() => {
 }
 
 .attendance-row td {
-  padding: 0.625rem 0.5rem;
-  border-right: 0.0625rem solid #eee;
   vertical-align: middle;
   height: 2.8125rem;
+}
+
+.attendance-row td:nth-child(-n + 3) {
+  vertical-align: middle;
+  padding-left: 0.5rem;
 }
 
 .attendance-row td:last-child {
@@ -503,7 +485,7 @@ onMounted(() => {
 }
 
 .attendance-row .col-day {
-  padding: 0.3125rem 0;
+  border: 1px solid #ddd;
 }
 
 .attendance-cell {
@@ -512,7 +494,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto;
+  margin: 0 0;
 }
 
 .attendance-cell .text-caption {
@@ -534,6 +516,7 @@ onMounted(() => {
 .days-header-container,
 .days-body-container {
   width: 100%;
+  height: 100%;
 }
 
 .days-header-scroller,
