@@ -103,10 +103,18 @@
                     <th class="col-personnel"></th>
                     <th class="col-name"></th>
                     <th class="col-name"></th>
-                    <template v-for="(dayData, index) in daysInYear" :key="`month-${index}`">
+                    <template
+                      v-for="(dayData, index) in daysInYear"
+                      :key="`month-${index}`"
+                    >
                       <th
                         v-if="dayData.isFirstOfMonth"
-                        :colspan="getDaysInMonth(dayData.month, dayData.date.getFullYear())"
+                        :colspan="
+                          getDaysInMonth(
+                            dayData.month,
+                            dayData.date.getFullYear(),
+                          )
+                        "
                         class="col-month text-center"
                       >
                         {{ dayData.monthName }}
@@ -118,12 +126,20 @@
                     <th class="col-personnel">No.</th>
                     <th class="col-name">First Name</th>
                     <th class="col-name">Last Name</th>
-                    <th
-                      v-for="dayData in daysInYear"
-                      :key="`header-${dayData.dayOfYear}`"
-                      class="col-day text-center"
-                    >
-                      {{ dayData.day }}
+                    <th class="days-header-container">
+                      <RecycleScroller
+                        class="days-header-scroller"
+                        :items="daysInYear"
+                        :item-size="35"
+                        direction="horizontal"
+                        key-field="dayOfYear"
+                      >
+                        <template #default="{ item }">
+                          <div class="col-day text-center">
+                            {{ item.day }}
+                          </div>
+                        </template>
+                      </RecycleScroller>
                     </th>
                   </tr>
                 </thead>
@@ -147,23 +163,38 @@
                           <td class="col-personnel">{{ employee.id }}</td>
                           <td class="col-name">{{ employee.firstName }}</td>
                           <td class="col-name">{{ employee.lastName }}</td>
-                          <td
-                            v-for="dayData in daysInYear"
-                            :key="`${employee.id}-${dayData.dayOfYear}`"
-                            class="col-day"
-                          >
-                            <v-sheet
-                              :key="updateKey"
-                              :color="getCellColor(employee.id, dayData)"
-                              class="attendance-cell"
-                              rounded
-                              :style="isWeekendDay(dayData) ? 'cursor: not-allowed' : 'cursor: pointer'"
-                              @click="handleCellClick(employee.id, dayData)"
+                          <td class="days-body-container">
+                            <RecycleScroller
+                              class="days-body-scroller"
+                              :items="daysInYear"
+                              :item-size="35"
+                              direction="horizontal"
+                              key-field="dayOfYear"
                             >
-                              <span class="text-caption font-weight-bold">{{
-                                dayData.day
-                              }}</span>
-                            </v-sheet>
+                              <template #default="{ item: dayData }">
+                                <div class="col-day">
+                                  <v-sheet
+                                    :key="`${employee.id}-${dayData.dayOfYear}-${updateKey}`"
+                                    :color="getCellColor(employee.id, dayData)"
+                                    class="attendance-cell"
+                                    rounded
+                                    :style="
+                                      isWeekendDay(dayData)
+                                        ? 'cursor: not-allowed'
+                                        : 'cursor: pointer'
+                                    "
+                                    @click="
+                                      handleCellClick(employee.id, dayData)
+                                    "
+                                  >
+                                    <span
+                                      class="text-caption font-weight-bold"
+                                      >{{ dayData.day }}</span
+                                    >
+                                  </v-sheet>
+                                </div>
+                              </template>
+                            </RecycleScroller>
                           </td>
                         </tr>
                       </tbody>
@@ -190,6 +221,8 @@
 
 <script setup lang="ts">
 import AbsenceDialog from "~/components/absence/AbsenceDialog.vue";
+import { RecycleScroller } from "vue-virtual-scroller";
+import "vue-virtual-scroller/dist/vue-virtual-scroller.css";
 
 // Get data from our composables
 const { employees } = useEmployees();
@@ -220,7 +253,6 @@ const COLUMN_WIDTHS = {
   day: 2.1875, // 35px
 };
 
-
 // Computed properties
 const currentYear = computed(() => {
   return currentDate.value.getFullYear();
@@ -239,7 +271,7 @@ const daysInYear = computed(() => {
       day: date.getDate(),
       month: date.getMonth(),
       monthName: date.toLocaleDateString("en-US", { month: "short" }),
-      isFirstOfMonth: date.getDate() === 1
+      isFirstOfMonth: date.getDate() === 1,
     };
   });
 });
@@ -275,19 +307,11 @@ const isWeekendDay = (dayData: any) => {
 };
 
 const previousYear = () => {
-  currentDate.value = new Date(
-    currentDate.value.getFullYear() - 1,
-    0,
-    1,
-  );
+  currentDate.value = new Date(currentDate.value.getFullYear() - 1, 0, 1);
 };
 
 const nextYear = () => {
-  currentDate.value = new Date(
-    currentDate.value.getFullYear() + 1,
-    0,
-    1,
-  );
+  currentDate.value = new Date(currentDate.value.getFullYear() + 1, 0, 1);
 };
 
 const goToToday = () => {
@@ -322,7 +346,6 @@ const handleSaveAbsence = (absenceData: any) => {
   // Check if user selected "Present" - this means delete the absence record
   if (absenceData.type === "present") {
     if (selectedAbsenceId.value) {
-      // Delete existing absence to mark as present
       deleteAbsence(selectedAbsenceId.value);
       console.log(
         "Deleted absence (marked as present):",
@@ -333,11 +356,9 @@ const handleSaveAbsence = (absenceData: any) => {
   } else {
     // Handle regular absence types
     if (selectedAbsenceId.value) {
-      // Update existing absence
       updateAbsence(selectedAbsenceId.value, absenceData);
       console.log("Updated absence:", selectedAbsenceId.value, absenceData);
     } else {
-      // Create new absence
       addAbsence(absenceData);
       console.log("Created new absence:", absenceData);
     }
@@ -366,7 +387,6 @@ const handleCancelAbsence = () => {
 watch(
   absences,
   () => {
-    // This will trigger whenever absences array changes
     console.log("Absences updated, total:", absences.value.length);
   },
   { deep: true },
@@ -508,5 +528,44 @@ onMounted(() => {
 /* Ensure the virtual scroll wrapper doesn't create horizontal scroll */
 .attendance-body-container :deep(.v-virtual-scroll__container) {
   overflow-x: hidden !important;
+}
+
+/* RecycleScroller styles for horizontal scrolling */
+.days-header-container,
+.days-body-container {
+  width: 100%;
+}
+
+.days-header-scroller,
+.days-body-scroller {
+  width: 100%;
+  height: 100%;
+}
+
+/* Override vue-virtual-scroller for horizontal direction */
+.days-header-scroller.vue-recycle-scroller,
+.days-body-scroller.vue-recycle-scroller {
+  overflow-x: auto;
+  overflow-y: hidden;
+  /* Hide scrollbar for Firefox */
+  scrollbar-width: none;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.days-header-scroller.vue-recycle-scroller::-webkit-scrollbar,
+.days-body-scroller.vue-recycle-scroller::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge */
+.days-header-scroller.vue-recycle-scroller,
+.days-body-scroller.vue-recycle-scroller {
+  -ms-overflow-style: none;
+}
+
+.days-header-scroller .vue-recycle-scroller__item-wrapper,
+.days-body-scroller .vue-recycle-scroller__item-wrapper {
+  display: flex;
+  flex-direction: row;
 }
 </style>
