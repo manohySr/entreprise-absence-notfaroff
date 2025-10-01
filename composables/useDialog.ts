@@ -1,5 +1,3 @@
-import type { Ref } from "vue";
-
 interface DialogState {
   isOpen: boolean;
   selectedId?: string;
@@ -68,3 +66,4 @@ export const useDialog = () => {
 };
 
 export type UseDialogReturn = ReturnType<typeof useDialog>;
+
