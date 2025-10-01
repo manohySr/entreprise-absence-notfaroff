@@ -8,7 +8,7 @@
   >
     <!-- App Logo/Title -->
     <div class="pa-4 text-center">
-      <div class="text-h5 font-weight-bold">{{ appName }}</div>
+      <div class="logo-text">{{ appName }}</div>
     </div>
 
     <!-- Navigation Menu Items -->
@@ -65,3 +65,15 @@ defineEmits<{
 }>();
 </script>
 
+<style scoped>
+.logo-text {
+  font-family: "Zen Tokyo Zoo", cursive;
+  font-size: 1.8rem;
+  font-weight: 400;
+  letter-spacing: 0.15em;
+  color: #1976d2;
+  text-transform: uppercase;
+  line-height: 1.1;
+  margin: 0.5rem 0;
+}
+</style>
