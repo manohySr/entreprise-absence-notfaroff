@@ -39,20 +39,21 @@
             <v-col cols="12">
               <v-radio-group
                 v-model="editMode"
-                inline
                 density="compact"
                 label="What would you like to edit?"
               >
-                <v-radio
-                  label="This day only"
-                  value="single"
-                  color="primary"
-                ></v-radio>
-                <v-radio
-                  label="Entire absence span"
-                  value="full"
-                  color="primary"
-                ></v-radio>
+                <v-row dense gap="4">
+                  <v-radio
+                    label="This day only"
+                    value="single"
+                    color="primary"
+                  />
+                  <v-radio
+                    label="Entire absence span"
+                    value="full"
+                    color="primary"
+                  />
+                </v-row>
               </v-radio-group>
             </v-col>
           </v-row>
@@ -123,7 +124,11 @@
 import { ref, computed, watch } from "vue";
 import type { Employee } from "~/types";
 import { formatDateToString, validateDateRange } from "@/utils/dateUtils";
-import { ABSENCE_TYPE_LABELS, mapAbsenceTypeToLabel, mapLabelToAbsenceType } from "@/types";
+import {
+  ABSENCE_TYPE_LABELS,
+  mapAbsenceTypeToLabel,
+  mapLabelToAbsenceType,
+} from "@/types";
 
 interface EmployeeSelectItem {
   title: string;
@@ -285,7 +290,6 @@ watch(
     }
   },
 );
-
 
 // Methods
 const updateDialog = (value: boolean) => {
