@@ -98,6 +98,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from "vue";
 import type { Employee } from "~/types";
+import { formatDateToString } from "@/utils/dateUtils";
 
 interface EmployeeSelectItem {
   title: string;
@@ -176,12 +177,7 @@ watch(
   () => props.selectedDate,
   (newDate) => {
     if (newDate) {
-      // Use local date formatting to avoid timezone issues
-      const year = newDate.getFullYear();
-      const month = String(newDate.getMonth() + 1).padStart(2, "0");
-      const day = String(newDate.getDate()).padStart(2, "0");
-      const dateStr = `${year}-${month}-${day}`;
-
+      const dateStr = formatDateToString(newDate);
       formData.value.startDate = dateStr;
       formData.value.endDate = dateStr;
     }
@@ -224,23 +220,11 @@ watch(
         }
         // Set dates from selected date or use today
         if (props.selectedDate) {
-          const year = props.selectedDate.getFullYear();
-          const month = String(props.selectedDate.getMonth() + 1).padStart(
-            2,
-            "0",
-          );
-          const day = String(props.selectedDate.getDate()).padStart(2, "0");
-          const dateStr = `${year}-${month}-${day}`;
-
+          const dateStr = formatDateToString(props.selectedDate);
           formData.value.startDate = dateStr;
           formData.value.endDate = dateStr;
         } else {
-          const today = new Date();
-          const year = today.getFullYear();
-          const month = String(today.getMonth() + 1).padStart(2, "0");
-          const day = String(today.getDate()).padStart(2, "0");
-          const todayStr = `${year}-${month}-${day}`;
-
+          const todayStr = formatDateToString(new Date());
           formData.value.startDate = todayStr;
           formData.value.endDate = todayStr;
         }

@@ -2,6 +2,7 @@
 // This manages all absence records and attendance logic
 
 import type { Absence, AttendanceStatus } from "~/types";
+import { formatDateToString, isWeekend, isSameDay } from "@/utils/dateUtils";
 
 export const useAttendance = () => {
   // State for all absences
@@ -43,18 +44,6 @@ export const useAttendance = () => {
   // Get the current date
   const today = new Date();
 
-  const isWeekend = (date: Date): boolean => {
-    const day = date.getDay();
-    return day === 0 || day === 6; // Sunday = 0, Saturday = 6
-  };
-
-  const isSameDay = (date1: Date, date2: Date): boolean => {
-    return (
-      date1.getFullYear() === date2.getFullYear() &&
-      date1.getMonth() === date2.getMonth() &&
-      date1.getDate() === date2.getDate()
-    );
-  };
 
   const getAttendanceStatus = (
     employeeId: string,
@@ -68,11 +57,7 @@ export const useAttendance = () => {
       return "weekend";
     }
 
-    // Format date as YYYY-MM-DD in local timezone
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    const dateStr = `${year}-${month}-${day}`;
+    const dateStr = formatDateToString(date);
 
     const absence = absences.value.find(
       (a) => a.employeeId === employeeId && a.date === dateStr,
@@ -93,11 +78,7 @@ export const useAttendance = () => {
     employeeId: string,
     date: Date,
   ): Absence | undefined => {
-    // Format date as YYYY-MM-DD in local timezone
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    const dateStr = `${year}-${month}-${day}`;
+    const dateStr = formatDateToString(date);
 
     return absences.value.find(
       (a) => a.employeeId === employeeId && a.date === dateStr,

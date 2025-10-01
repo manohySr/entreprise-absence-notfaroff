@@ -201,6 +201,7 @@
 import AbsenceDialog from "~/components/absence/AbsenceDialog.vue";
 import { RecycleScroller } from "vue-virtual-scroller";
 import "vue-virtual-scroller/dist/vue-virtual-scroller.css";
+import { isWeekend } from "@/utils/dateUtils";
 
 // Get data from our composables
 const { employees } = useEmployees();
@@ -211,7 +212,6 @@ const {
   addAbsence,
   updateAbsence,
   deleteAbsence,
-  isWeekend,
 } = useAttendance();
 
 // Component state
