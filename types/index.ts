@@ -1,8 +1,5 @@
-// TypeScript Type Definitions
-// These interfaces define the shape of our data throughout the app
-
 export interface Employee {
-  id: string           // P001, P002, etc.
+  id: string
   firstName: string
   lastName: string
   department?: string
@@ -24,29 +21,45 @@ export interface Absence {
   notes?: string
 }
 
-export type AbsenceType = 'sick' | 'vacation' | 'personal' | 'other'
+export type AbsenceType = 'sick' | 'vacation' | 'personal' | 'medical' | 'maternity' | 'paternity' | 'bereavement' | 'present' | 'other'
 
 export type AttendanceStatus = 'present' | 'absent' | 'weekend' | 'holiday' | 'today'
 
-export interface AttendanceCellData {
-  date: string
-  status: AttendanceStatus
-  absence?: Absence
-}
+export const ABSENCE_TYPE_LABELS = [
+  "Vacation",
+  "Sick Leave",
+  "Personal Leave",
+  "Medical Leave",
+  "Maternity Leave",
+  "Paternity Leave",
+  "Bereavement Leave",
+  "Present",
+  "Other",
+] as const;
 
-export interface User {
-  id: string
-  name: string
-  email: string
-  role: 'admin' | 'manager' | 'employee'
-  avatar?: string
-}
+export const ABSENCE_TYPE_MAP: Record<AbsenceType, string> = {
+  sick: "Sick Leave",
+  vacation: "Vacation",
+  personal: "Personal Leave",
+  medical: "Medical Leave",
+  maternity: "Maternity Leave",
+  paternity: "Paternity Leave",
+  bereavement: "Bereavement Leave",
+  present: "Present",
+  other: "Other",
+};
 
-// Helper type for the calendar grid
-export interface CalendarDay {
-  date: Date
-  dayNumber: number
-  isCurrentMonth: boolean
-  isToday: boolean
-  isWeekend: boolean
-}
+/**
+ * Converts backend absence type to human-readable label
+ */
+export const mapAbsenceTypeToLabel = (type: AbsenceType): string => {
+  return ABSENCE_TYPE_MAP[type] || "Other";
+};
+
+/**
+ * Converts human-readable label to backend absence type
+ */
+export const mapLabelToAbsenceType = (label: string): AbsenceType => {
+  const entry = Object.entries(ABSENCE_TYPE_MAP).find(([_, value]) => value === label);
+  return (entry?.[0] as AbsenceType) || 'other';
+};

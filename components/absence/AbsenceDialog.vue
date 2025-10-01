@@ -123,6 +123,7 @@
 import { ref, computed, watch } from "vue";
 import type { Employee } from "~/types";
 import { formatDateToString, validateDateRange } from "@/utils/dateUtils";
+import { ABSENCE_TYPE_LABELS, mapAbsenceTypeToLabel, mapLabelToAbsenceType } from "@/types";
 
 interface EmployeeSelectItem {
   title: string;
@@ -180,17 +181,7 @@ const formData = ref<AbsenceFormData>({
   reason: "",
 });
 
-const absenceTypes = [
-  "Vacation",
-  "Sick Leave",
-  "Personal Leave",
-  "Medical Leave",
-  "Maternity Leave",
-  "Paternity Leave",
-  "Bereavement Leave",
-  "Present",
-  "Other",
-];
+const absenceTypes = ABSENCE_TYPE_LABELS;
 
 const isEditMode = computed(() => !!props.absenceId);
 
@@ -272,7 +263,7 @@ watch(
           formData.value.employeeId = existingAbsence.employeeId;
           formData.value.startDate = existingAbsence.startDate;
           formData.value.endDate = existingAbsence.endDate;
-          formData.value.type = mapAbsenceType(existingAbsence.type);
+          formData.value.type = mapAbsenceTypeToLabel(existingAbsence.type);
           formData.value.reason = existingAbsence.reason || "";
         }
       } else {
@@ -295,16 +286,6 @@ watch(
   },
 );
 
-const mapAbsenceType = (type: string): string => {
-  const typeMap: Record<string, string> = {
-    sick: "Sick Leave",
-    vacation: "Vacation",
-    personal: "Personal Leave",
-    medical: "Medical Leave",
-    other: "Other",
-  };
-  return typeMap[type] || "Other";
-};
 
 // Methods
 const updateDialog = (value: boolean) => {
@@ -329,25 +310,11 @@ const handleSave = () => {
     return;
   }
 
-  // Map the type back to backend format
-  const reverseMapAbsenceType = (type: string): string => {
-    const typeMap: Record<string, string> = {
-      "Sick Leave": "sick",
-      Vacation: "vacation",
-      "Personal Leave": "personal",
-      "Medical Leave": "medical",
-      Present: "present",
-      Other: "other",
-    };
-    return typeMap[type] || "other";
-  };
-
-  // Prepare the data for saving
   const saveData = {
     employeeId: formData.value.employeeId,
     startDate: formData.value.startDate,
     endDate: formData.value.endDate,
-    type: reverseMapAbsenceType(formData.value.type),
+    type: mapLabelToAbsenceType(formData.value.type),
     reason: formData.value.reason,
     approved: false, // Default to false for new absences
   };
