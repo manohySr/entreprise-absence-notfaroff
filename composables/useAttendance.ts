@@ -108,6 +108,41 @@ export const useAttendance = () => {
     }
   };
 
+  const splitAbsenceAtDate = (absence: Absence, splitDate: Date): Absence[] => {
+    const splitDateStr = formatDateToString(splitDate);
+    const remainingAbsences: Absence[] = [];
+
+    // Calculate date before split date
+    const beforeDate = new Date(splitDate);
+    beforeDate.setDate(beforeDate.getDate() - 1);
+    const beforeDateStr = formatDateToString(beforeDate);
+
+    // Calculate date after split date
+    const afterDate = new Date(splitDate);
+    afterDate.setDate(afterDate.getDate() + 1);
+    const afterDateStr = formatDateToString(afterDate);
+
+    // Create "before" range if it exists
+    if (absence.startDate < splitDateStr) {
+      remainingAbsences.push({
+        ...absence,
+        id: undefined, // Will get new ID when added
+        endDate: beforeDateStr,
+      });
+    }
+
+    // Create "after" range if it exists
+    if (absence.endDate > splitDateStr) {
+      remainingAbsences.push({
+        ...absence,
+        id: undefined, // Will get new ID when added
+        startDate: afterDateStr,
+      });
+    }
+
+    return remainingAbsences;
+  };
+
   const getAbsenceStats = () => {
     const total = absences.value.length;
     const approved = absences.value.filter((a) => a.approved).length;
@@ -131,6 +166,7 @@ export const useAttendance = () => {
     addAbsence,
     updateAbsence,
     deleteAbsence,
+    splitAbsenceAtDate,
     getAbsenceStats,
     isWeekend,
     isSameDay,

@@ -33,6 +33,29 @@
               ></v-select>
             </v-col>
           </v-row>
+
+          <!-- Edit Mode Selection (only show for multi-day absences) -->
+          <v-row v-if="isEditMode && isMultiDayAbsence">
+            <v-col cols="12">
+              <v-radio-group
+                v-model="editMode"
+                inline
+                density="compact"
+                label="What would you like to edit?"
+              >
+                <v-radio
+                  label="This day only"
+                  value="single"
+                  color="primary"
+                ></v-radio>
+                <v-radio
+                  label="Entire absence span"
+                  value="full"
+                  color="primary"
+                ></v-radio>
+              </v-radio-group>
+            </v-col>
+          </v-row>
           <v-row>
             <v-col cols="12">
               <v-text-field
@@ -55,6 +78,7 @@
                 variant="outlined"
                 density="compact"
                 required
+                :disabled="editMode === 'single'"
               ></v-text-field>
             </v-col>
           </v-row>
@@ -133,10 +157,20 @@ const props = defineProps<{
 const emit = defineEmits<{
   "update:modelValue": [value: boolean];
   save: [data: AbsenceFormData];
+  splitSave: [
+    data: {
+      originalId: string;
+      clickedDate: Date;
+      newAbsence: AbsenceFormData;
+    },
+  ];
   cancel: [];
 }>();
 
 const absenceForm = ref();
+
+// Edit mode for multi-day absences
+const editMode = ref<"single" | "full">("full");
 
 const formData = ref<AbsenceFormData>({
   employeeId: "",
@@ -158,10 +192,16 @@ const absenceTypes = [
   "Other",
 ];
 
-// Computed to check if we're in edit mode
 const isEditMode = computed(() => !!props.absenceId);
 
-// Computed
+const isMultiDayAbsence = computed(() => {
+  if (!isEditMode.value) return false;
+  const existingAbsence = absences.value.find((a) => a.id === props.absenceId);
+  return (
+    existingAbsence && existingAbsence.startDate !== existingAbsence.endDate
+  );
+});
+
 const formattedDate = computed(() => {
   const date = props.selectedDate || new Date();
   return date.toLocaleDateString("en-US", {
@@ -196,11 +236,33 @@ watch(
   { immediate: true },
 );
 
+// Watch editMode to update form behavior
+watch(editMode, (newMode) => {
+  if (newMode === "single" && props.selectedDate) {
+    // Lock dates to clicked date
+    const clickedDateStr = formatDateToString(props.selectedDate);
+    formData.value.startDate = clickedDateStr;
+    formData.value.endDate = clickedDateStr;
+  } else if (newMode === "full" && props.absenceId) {
+    // Restore original date range
+    const existingAbsence = absences.value.find(
+      (a) => a.id === props.absenceId,
+    );
+    if (existingAbsence) {
+      formData.value.startDate = existingAbsence.startDate;
+      formData.value.endDate = existingAbsence.endDate;
+    }
+  }
+});
+
 // Watch for dialog open to initialize dates and employee
 watch(
   () => props.modelValue,
   (isOpen) => {
     if (isOpen) {
+      // Reset edit mode to default
+      editMode.value = "full";
+
       // Check if we're editing an existing absence
       if (props.absenceId) {
         const existingAbsence = absences.value.find(
@@ -290,7 +352,23 @@ const handleSave = () => {
     approved: false, // Default to false for new absences
   };
 
-  emit("save", saveData);
+  // Check if we're in single-day edit mode for a multi-day absence
+  if (
+    editMode.value === "single" &&
+    isMultiDayAbsence.value &&
+    props.selectedDate
+  ) {
+    // Emit split save event
+    emit("splitSave", {
+      originalId: props.absenceId!,
+      clickedDate: props.selectedDate,
+      newAbsence: saveData,
+    });
+  } else {
+    // Regular save
+    emit("save", saveData);
+  }
+
   closeDialog();
   resetForm();
 };

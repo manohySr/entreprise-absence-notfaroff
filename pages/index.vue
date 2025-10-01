@@ -192,6 +192,7 @@
       :employee-id="selectedEmployeeId"
       :selected-date="selectedAbsenceDate"
       @save="handleSaveAbsence"
+      @split-save="handleSplitSaveAbsence"
       @cancel="handleCancelAbsence"
     />
   </div>
@@ -212,6 +213,7 @@ const {
   addAbsence,
   updateAbsence,
   deleteAbsence,
+  splitAbsenceAtDate,
 } = useAttendance();
 
 // Component state
@@ -351,6 +353,45 @@ const handleSaveAbsence = (absenceData: any) => {
   updateKey.value++;
 
   // TODO: Success notification
+};
+
+const handleSplitSaveAbsence = (data: any) => {
+  console.log("Split save absence:", data);
+
+  // Find the original absence
+  const originalAbsence = absences.value.find(a => a.id === data.originalId);
+  if (!originalAbsence) {
+    console.error("Original absence not found");
+    return;
+  }
+
+  // Get the remaining absence ranges after splitting
+  const remainingRanges = splitAbsenceAtDate(originalAbsence, data.clickedDate);
+
+  // Delete the original absence
+  deleteAbsence(data.originalId);
+
+  // Only add new absence if type is NOT "present"
+  // If type is "present", we don't create any absence (day becomes present)
+  if (data.newAbsence.type !== "present") {
+    addAbsence(data.newAbsence);
+    console.log("Created new absence for clicked date:", data.newAbsence);
+  } else {
+    console.log("Marked clicked date as present (no absence created)");
+  }
+
+  // Add any remaining ranges
+  remainingRanges.forEach(range => addAbsence(range));
+
+  // Reset selected values
+  selectedAbsenceId.value = undefined;
+  selectedEmployeeId.value = undefined;
+  selectedAbsenceDate.value = undefined;
+
+  // Force update the grid
+  updateKey.value++;
+
+  console.log("Split save completed");
 };
 
 const handleCancelAbsence = () => {
