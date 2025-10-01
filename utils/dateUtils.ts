@@ -91,3 +91,24 @@ export const compareDateStrings = (date1: string, date2: string): number => {
   if (date1 > date2) return 1;
   return 0;
 };
+
+/**
+ * Checks if a date falls within a date range (inclusive)
+ */
+export const isDateInRange = (date: Date | string, startDate: Date | string, endDate: Date | string): boolean => {
+  const dateStr = typeof date === 'string' ? date : formatDateToString(date);
+  const startStr = typeof startDate === 'string' ? startDate : formatDateToString(startDate);
+  const endStr = typeof endDate === 'string' ? endDate : formatDateToString(endDate);
+
+  return dateStr >= startStr && dateStr <= endStr;
+};
+
+/**
+ * Validates that a date range is valid (endDate >= startDate)
+ */
+export const validateDateRange = (startDate: Date | string, endDate: Date | string): boolean => {
+  const startStr = typeof startDate === 'string' ? startDate : formatDateToString(startDate);
+  const endStr = typeof endDate === 'string' ? endDate : formatDateToString(endDate);
+
+  return endStr >= startStr;
+};

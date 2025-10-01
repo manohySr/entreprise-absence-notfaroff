@@ -15,7 +15,8 @@ export interface Employee {
 export interface Absence {
   id?: string
   employeeId: string
-  date: string         // ISO date format (YYYY-MM-DD)
+  startDate: string    // ISO date format (YYYY-MM-DD)
+  endDate: string      // ISO date format (YYYY-MM-DD) - inclusive
   type: AbsenceType
   reason?: string
   approved?: boolean

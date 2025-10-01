@@ -2,7 +2,7 @@
 // This manages all absence records and attendance logic
 
 import type { Absence, AttendanceStatus } from "~/types";
-import { formatDateToString, isWeekend, isSameDay } from "@/utils/dateUtils";
+import { formatDateToString, isWeekend, isSameDay, isDateInRange } from "@/utils/dateUtils";
 
 export const useAttendance = () => {
   // State for all absences
@@ -10,7 +10,8 @@ export const useAttendance = () => {
     {
       id: "1",
       employeeId: "P001",
-      date: "2025-09-01",
+      startDate: "2025-09-01",
+      endDate: "2025-09-01",
       type: "sick",
       reason: "Flu",
       approved: true,
@@ -18,7 +19,8 @@ export const useAttendance = () => {
     {
       id: "2",
       employeeId: "P002",
-      date: "2025-09-08",
+      startDate: "2025-09-08",
+      endDate: "2025-09-10",
       type: "vacation",
       reason: "Family trip",
       approved: true,
@@ -26,7 +28,8 @@ export const useAttendance = () => {
     {
       id: "3",
       employeeId: "P003",
-      date: "2025-09-15",
+      startDate: "2025-09-15",
+      endDate: "2025-09-15",
       type: "personal",
       reason: "Personal matter",
       approved: true,
@@ -34,9 +37,10 @@ export const useAttendance = () => {
     {
       id: "4",
       employeeId: "P006",
-      date: "2025-09-24",
+      startDate: "2025-09-24",
+      endDate: "2025-09-27",
       type: "sick",
-      reason: "Doctor appointment",
+      reason: "Doctor appointment and recovery",
       approved: true,
     },
   ]);
@@ -60,7 +64,7 @@ export const useAttendance = () => {
     const dateStr = formatDateToString(date);
 
     const absence = absences.value.find(
-      (a) => a.employeeId === employeeId && a.date === dateStr,
+      (a) => a.employeeId === employeeId && isDateInRange(dateStr, a.startDate, a.endDate),
     );
 
     if (absence) {
@@ -81,7 +85,7 @@ export const useAttendance = () => {
     const dateStr = formatDateToString(date);
 
     return absences.value.find(
-      (a) => a.employeeId === employeeId && a.date === dateStr,
+      (a) => a.employeeId === employeeId && isDateInRange(dateStr, a.startDate, a.endDate),
     );
   };
 

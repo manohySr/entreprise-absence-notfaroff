@@ -98,7 +98,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from "vue";
 import type { Employee } from "~/types";
-import { formatDateToString } from "@/utils/dateUtils";
+import { formatDateToString, validateDateRange } from "@/utils/dateUtils";
 
 interface EmployeeSelectItem {
   title: string;
@@ -208,8 +208,8 @@ watch(
         );
         if (existingAbsence) {
           formData.value.employeeId = existingAbsence.employeeId;
-          formData.value.startDate = existingAbsence.date;
-          formData.value.endDate = existingAbsence.date;
+          formData.value.startDate = existingAbsence.startDate;
+          formData.value.endDate = existingAbsence.endDate;
           formData.value.type = mapAbsenceType(existingAbsence.type);
           formData.value.reason = existingAbsence.reason || "";
         }
@@ -260,7 +260,12 @@ const handleCancel = () => {
 };
 
 const handleSave = () => {
-  // TODO: Add validation before saving
+  // Validate date range
+  if (!validateDateRange(formData.value.startDate, formData.value.endDate)) {
+    // TODO: Show error message to user
+    console.error("End date must be after or equal to start date");
+    return;
+  }
 
   // Map the type back to backend format
   const reverseMapAbsenceType = (type: string): string => {
@@ -278,7 +283,8 @@ const handleSave = () => {
   // Prepare the data for saving
   const saveData = {
     employeeId: formData.value.employeeId,
-    date: formData.value.startDate,
+    startDate: formData.value.startDate,
+    endDate: formData.value.endDate,
     type: reverseMapAbsenceType(formData.value.type),
     reason: formData.value.reason,
     approved: false, // Default to false for new absences
