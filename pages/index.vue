@@ -91,8 +91,8 @@ import AbsenceDialog from "~/components/absence/AbsenceDialog.vue";
 import AttendanceHeader from "~/components/attendance/AttendanceHeader.vue";
 import AttendanceTable from "~/components/attendance/AttendanceTable.vue";
 
-// Get data from our composables
-const { employees } = useEmployees();
+// Get data from our stores
+const { employees } = useEmployeeStore();
 const {
   absences,
   getAttendanceStatus,
@@ -101,7 +101,7 @@ const {
   updateAbsence,
   deleteAbsence,
   splitAbsenceAtDate,
-} = useAttendance();
+} = useAttendanceStore();
 
 // Use table composable for table-related state and methods
 const {

@@ -143,8 +143,8 @@ interface AbsenceFormData {
   reason: string;
 }
 
-const { employees } = useEmployees();
-const { absences } = useAttendance();
+const { employees } = useEmployeeStore();
+const { absences } = useAttendanceStore();
 
 const formatEmployees = computed<EmployeeSelectItem[]>(() =>
   (employees.value ?? []).map((employee: Employee) => ({

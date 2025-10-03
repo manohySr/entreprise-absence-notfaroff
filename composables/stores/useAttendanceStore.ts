@@ -1,11 +1,7 @@
-// Composable for Attendance/Absence State Management
-// This manages all absence records and attendance logic
-
 import type { Absence, AttendanceStatus } from "~/types";
 import { formatDateToString, isWeekend, isSameDay, isDateInRange } from "@/utils/dateUtils";
 
-export const useAttendance = () => {
-  // State for all absences
+export const useAttendanceStore = () => {
   const absences = useState<Absence[]>("absences", () => [
     {
       id: "1",
@@ -45,9 +41,15 @@ export const useAttendance = () => {
     },
   ]);
 
-  // Get the current date
   const today = new Date();
 
+  const generateNextAbsenceId = (): string => {
+    const maxId = Math.max(
+      0,
+      ...absences.value.map((a) => parseInt(a.id || "0") || 0)
+    );
+    return String(maxId + 1);
+  };
 
   const getAttendanceStatus = (
     employeeId: string,
@@ -62,7 +64,6 @@ export const useAttendance = () => {
     }
 
     const dateStr = formatDateToString(date);
-
     const absence = absences.value.find(
       (a) => a.employeeId === employeeId && isDateInRange(dateStr, a.startDate, a.endDate),
     );
@@ -83,59 +84,84 @@ export const useAttendance = () => {
     date: Date,
   ): Absence | undefined => {
     const dateStr = formatDateToString(date);
-
     return absences.value.find(
       (a) => a.employeeId === employeeId && isDateInRange(dateStr, a.startDate, a.endDate),
     );
   };
 
-  const addAbsence = (absence: Omit<Absence, "id">) => {
-    const newId = String(absences.value.length + 1);
-    absences.value.push({ ...absence, id: newId, approved: false });
+  const getAbsencesInDateRange = (startDate: string, endDate: string): Absence[] => {
+    return absences.value.filter(
+      (a) => !(a.endDate < startDate || a.startDate > endDate)
+    );
   };
 
-  const updateAbsence = (id: string, updates: Partial<Absence>) => {
+  const addAbsence = (absence: Omit<Absence, "id">): Absence => {
+    const newAbsence: Absence = {
+      ...absence,
+      id: generateNextAbsenceId(),
+      approved: absence.approved ?? false,
+    };
+    absences.value.push(newAbsence);
+    return newAbsence;
+  };
+
+  const updateAbsence = (id: string, updates: Partial<Absence>): boolean => {
     const index = absences.value.findIndex((a) => a.id === id);
     if (index !== -1) {
       absences.value[index] = { ...absences.value[index], ...updates };
+      return true;
     }
+    return false;
   };
 
-  const deleteAbsence = (id: string) => {
+  const deleteAbsence = (id: string): boolean => {
     const index = absences.value.findIndex((a) => a.id === id);
     if (index !== -1) {
       absences.value.splice(index, 1);
+      return true;
     }
+    return false;
+  };
+
+  const approveAbsence = (id: string, approvedBy: string): boolean => {
+    return updateAbsence(id, {
+      approved: true,
+      approvedBy,
+      notes: `Approved on ${formatDateToString(new Date())}`
+    });
+  };
+
+  const rejectAbsence = (id: string, reason?: string): boolean => {
+    return updateAbsence(id, {
+      approved: false,
+      notes: reason ? `Rejected: ${reason}` : "Rejected"
+    });
   };
 
   const splitAbsenceAtDate = (absence: Absence, splitDate: Date): Absence[] => {
     const splitDateStr = formatDateToString(splitDate);
     const remainingAbsences: Absence[] = [];
 
-    // Calculate date before split date
     const beforeDate = new Date(splitDate);
     beforeDate.setDate(beforeDate.getDate() - 1);
     const beforeDateStr = formatDateToString(beforeDate);
 
-    // Calculate date after split date
     const afterDate = new Date(splitDate);
     afterDate.setDate(afterDate.getDate() + 1);
     const afterDateStr = formatDateToString(afterDate);
 
-    // Create "before" range if it exists
     if (absence.startDate < splitDateStr) {
       remainingAbsences.push({
         ...absence,
-        id: undefined, // Will get new ID when added
+        id: undefined,
         endDate: beforeDateStr,
       });
     }
 
-    // Create "after" range if it exists
     if (absence.endDate > splitDateStr) {
       remainingAbsences.push({
         ...absence,
-        id: undefined, // Will get new ID when added
+        id: undefined,
         startDate: afterDateStr,
       });
     }
@@ -147,6 +173,7 @@ export const useAttendance = () => {
     const total = absences.value.length;
     const approved = absences.value.filter((a) => a.approved).length;
     const pending = total - approved;
+
     const byType = absences.value.reduce(
       (acc, absence) => {
         acc[absence.type] = (acc[absence.type] || 0) + 1;
@@ -155,20 +182,57 @@ export const useAttendance = () => {
       {} as Record<string, number>,
     );
 
-    return { total, approved, pending, byType };
+    const byEmployee = absences.value.reduce(
+      (acc, absence) => {
+        acc[absence.employeeId] = (acc[absence.employeeId] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    const currentMonthAbsences = absences.value.filter(
+      (a) => a.startDate.startsWith(currentMonth) || a.endDate.startsWith(currentMonth)
+    );
+
+    return {
+      total,
+      approved,
+      pending,
+      byType,
+      byEmployee,
+      currentMonth: currentMonthAbsences.length
+    };
+  };
+
+  const validateAbsenceOverlap = (
+    employeeId: string,
+    startDate: string,
+    endDate: string,
+    excludeId?: string
+  ): boolean => {
+    return !absences.value.some((a) => {
+      if (a.employeeId !== employeeId || a.id === excludeId) {
+        return false;
+      }
+      return !(endDate < a.startDate || startDate > a.endDate);
+    });
   };
 
   return {
-    absences,
+    absences: readonly(absences),
     getAttendanceStatus,
     getEmployeeAbsences,
     getAbsenceByEmployeeAndDate,
+    getAbsencesInDateRange,
     addAbsence,
     updateAbsence,
     deleteAbsence,
+    approveAbsence,
+    rejectAbsence,
     splitAbsenceAtDate,
     getAbsenceStats,
-    isWeekend,
-    isSameDay,
+    validateAbsenceOverlap,
+    generateNextAbsenceId,
   };
 };

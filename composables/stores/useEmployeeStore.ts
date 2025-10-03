@@ -1,9 +1,6 @@
-// Composable for Employee State Management
-// This manages all employee records and logic
-
 import type { Employee } from "~/types";
 
-export const useEmployees = () => {
+export const useEmployeeStore = () => {
   const employees = useState<Employee[]>("employees", () => [
     {
       id: "P001",
@@ -433,31 +430,62 @@ export const useEmployees = () => {
     return employees.value.find((emp) => emp.id === id);
   };
 
-  const addEmployee = (employee: Omit<Employee, "id">) => {
-    const newId = `P${String(employees.value.length + 1).padStart(3, "0")}`;
-    employees.value.push({ ...employee, id: newId });
+  const findEmployeesByDepartment = (department: string): Employee[] => {
+    return employees.value.filter((emp) => emp.department === department);
   };
 
-  const updateEmployee = (id: string, updates: Partial<Employee>) => {
+  const generateNextEmployeeId = (): string => {
+    const maxId = Math.max(
+      ...employees.value.map((e) => parseInt(e.id.replace("P", "")) || 0)
+    );
+    return `P${String(maxId + 1).padStart(3, "0")}`;
+  };
+
+  const addEmployee = (employee: Omit<Employee, "id">): Employee => {
+    const newEmployee = {
+      ...employee,
+      id: generateNextEmployeeId()
+    };
+    employees.value.push(newEmployee);
+    return newEmployee;
+  };
+
+  const updateEmployee = (id: string, updates: Partial<Employee>): boolean => {
     const index = employees.value.findIndex((emp) => emp.id === id);
     if (index !== -1) {
       employees.value[index] = { ...employees.value[index], ...updates };
+      return true;
     }
+    return false;
   };
 
-  const deleteEmployee = (id: string) => {
+  const deleteEmployee = (id: string): boolean => {
     const index = employees.value.findIndex((emp) => emp.id === id);
     if (index !== -1) {
       employees.value.splice(index, 1);
+      return true;
     }
+    return false;
+  };
+
+  const getAllDepartments = (): string[] => {
+    const departments = new Set(
+      employees.value
+        .map((emp) => emp.department)
+        .filter((dept): dept is string => dept !== undefined)
+    );
+    return Array.from(departments).sort();
   };
 
   return {
-    employees: readonly(employees), // Make it readonly to prevent direct mutations
+    employees: readonly(employees),
     totalEmployees,
     findEmployeeById,
+    findEmployeesByDepartment,
     addEmployee,
     updateEmployee,
     deleteEmployee,
+    getAllDepartments,
+    generateNextEmployeeId,
   };
 };

@@ -57,7 +57,7 @@
 
 <script setup lang="ts">
 // Use the employees composable
-const { employees } = useEmployees();
+const { employees } = useEmployeeStore();
 
 // Component state
 const search = ref("");
