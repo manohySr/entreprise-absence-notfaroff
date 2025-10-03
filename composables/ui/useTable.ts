@@ -45,11 +45,19 @@ export const useTable = () => {
 
   // Navigation methods
   const previousYear = () => {
-    state.value.currentDate = new Date(state.value.currentDate.getFullYear() - 1, 0, 1);
+    state.value.currentDate = new Date(
+      state.value.currentDate.getFullYear() - 1,
+      0,
+      1,
+    );
   };
 
   const nextYear = () => {
-    state.value.currentDate = new Date(state.value.currentDate.getFullYear() + 1, 0, 1);
+    state.value.currentDate = new Date(
+      state.value.currentDate.getFullYear() + 1,
+      0,
+      1,
+    );
   };
 
   const goToToday = () => {
@@ -78,10 +86,78 @@ export const useTable = () => {
     return new Date(year, month + 1, 0).getDate();
   };
 
+  // Width constants from AttendanceTable.vue
+  const COLUMN_WIDTHS = {
+    personnel: 6.25, // 100px in rem
+    name: 9.375, // 150px in rem
+    day: 2.1875, // 35px in rem
+  };
+
+  const getTodayColumnIndex = () => {
+    const today = new Date();
+    if (today.getFullYear() !== currentYear.value) return null;
+
+    const startOfYear = new Date(currentYear.value, 0, 1);
+    const daysDiff = Math.floor(
+      (today.getTime() - startOfYear.getTime()) / (1000 * 60 * 60 * 24),
+    );
+    return daysDiff;
+  };
+
+  const getMonthsUpToToday = () => {
+    const today = new Date();
+    if (today.getFullYear() !== currentYear.value) return [];
+
+    const months = [];
+    for (let month = 0; month < today.getMonth(); month++) {
+      const daysInMonth = new Date(currentYear.value, month + 1, 0).getDate();
+      months.push({
+        month,
+        daysCount: daysInMonth,
+        width: daysInMonth * COLUMN_WIDTHS.day
+      });
+    }
+    return months;
+  };
+
+  const getTodayPositionInMonth = () => {
+    const today = new Date();
+    if (today.getFullYear() !== currentYear.value) return null;
+
+    const dayOfMonth = today.getDate() - 1; // 0-based
+    return dayOfMonth * COLUMN_WIDTHS.day;
+  };
+
   const scrollToToday = () => {
-    // This would need to be implemented with the specific scrolling logic
-    // for the table component - placeholder for now
     goToToday();
+
+    nextTick(() => {
+      const monthsBeforeToday = getMonthsUpToToday();
+      const positionInCurrentMonth = getTodayPositionInMonth();
+
+      if (positionInCurrentMonth === null) return;
+
+      // Calculate total width of months before today (in rem)
+      const monthsWidth = monthsBeforeToday.reduce((total, month) => total + month.width, 0);
+
+      // Add position within current month (in rem)
+      const totalPositionRem = monthsWidth + positionInCurrentMonth;
+
+      const scrollContainer = document.querySelector(".attendance-scroll-container");
+      if (!scrollContainer) return;
+
+      // Employee columns width in rem (from AttendanceTable calculation)
+      const employeeColumnsWidthRem = COLUMN_WIDTHS.personnel + COLUMN_WIDTHS.name * 2; // 25rem
+
+      // Calculate scroll position in rem, then convert to pixels
+      const scrollPositionRem = totalPositionRem + employeeColumnsWidthRem - (scrollContainer.clientWidth / 2 / 16);
+      const scrollPositionPx = scrollPositionRem * 16; // Convert rem to px (1rem = 16px)
+
+      scrollContainer.scrollTo({
+        left: Math.max(0, scrollPositionPx),
+        behavior: "smooth",
+      });
+    });
   };
 
   return {
@@ -105,8 +181,12 @@ export const useTable = () => {
 
     // Utilities
     getDaysInMonth,
+    getTodayColumnIndex,
+    getMonthsUpToToday,
+    getTodayPositionInMonth,
     scrollToToday,
   };
 };
 
 export type UseTableReturn = ReturnType<typeof useTable>;
+

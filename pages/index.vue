@@ -60,7 +60,7 @@
       :current-year="currentYear"
       @previous-year="previousYear"
       @next-year="nextYear"
-      @go-to-today="goToToday"
+      @go-to-today="scrollToToday"
     />
 
     <!-- Attendance Table -->
@@ -111,6 +111,7 @@ const {
   previousYear,
   nextYear,
   goToToday,
+  scrollToToday,
   forceUpdate,
 } = useTable();
 
