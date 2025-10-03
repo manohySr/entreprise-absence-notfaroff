@@ -63,7 +63,7 @@ const handleLogout = () => {
 };
 
 const handleProfile = () => {
-  router.push("/profile");
+  console.log("Show profile page");
 };
 
 const handleSettings = () => {
@@ -80,4 +80,3 @@ const handleHelp = () => {
 </script>
 
 <style scoped></style>
-
