@@ -4,6 +4,18 @@
 
 A Vue.js/Nuxt 3 application for managing employee absences with a full-year calendar view, featuring virtual scrolling and real-time updates.
 
+
+<br />
+<img
+  width="1920"
+  height="932"
+  alt="Screenshot From 2025-10-07 21-11-53"
+  src="https://github.com/user-attachments/assets/d71d56f2-3aee-4526-88a7-32b09818d5ce"
+  style="margin: 40px 0;"
+/>
+<br />
+
+
 ## Completed Requirements
 
 ### Core Technical Stack
